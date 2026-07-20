@@ -1,0 +1,174 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.5rem;
+  --background: #f7f8fa;
+  --foreground: #172033;
+  --card: #ffffff;
+  --card-foreground: #172033;
+  --popover: #ffffff;
+  --popover-foreground: #172033;
+  --primary: #6854e8;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f3f6;
+  --secondary-foreground: #172033;
+  --muted: #eef1f5;
+  --muted-foreground: #5e687a;
+  --accent: #eef1f5;
+  --accent-foreground: #172033;
+  --destructive: #c53b3b;
+  --border: #dfe3ea;
+  --input: #dfe3ea;
+  --ring: #5944d5;
+  --sidebar: #f1f3f6;
+  --sidebar-foreground: #172033;
+  --sidebar-primary: #6854e8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef1f5;
+  --sidebar-accent-foreground: #172033;
+  --sidebar-border: #dfe3ea;
+  --sidebar-ring: #5944d5;
+}
+
+.dark {
+  --background: #0c0d10;
+  --foreground: #f2f3f5;
+  --card: #14161b;
+  --card-foreground: #f2f3f5;
+  --popover: #1b1e25;
+  --popover-foreground: #f2f3f5;
+  --primary: #8b7cf6;
+  --primary-foreground: #ffffff;
+  --secondary: #14161b;
+  --secondary-foreground: #f2f3f5;
+  --muted: #1b1e25;
+  --muted-foreground: #a6adba;
+  --accent: #222630;
+  --accent-foreground: #f2f3f5;
+  --destructive: #f16b6b;
+  --border: #272a31;
+  --input: #272a31;
+  --ring: #9b8cff;
+  --sidebar: #101115;
+  --sidebar-foreground: #f2f3f5;
+  --sidebar-primary: #8b7cf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #222630;
+  --sidebar-accent-foreground: #f2f3f5;
+  --sidebar-border: #272a31;
+  --sidebar-ring: #9b8cff;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ---------- Tiptap ---------- */
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted-foreground);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tiptap {
+  min-height: 60px;
+}
+
+.tiptap p {
+  margin: 0.25rem 0;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+.tiptap ul {
+  list-style: disc;
+}
+.tiptap ol {
+  list-style: decimal;
+}
+
+.tiptap code {
+  background: var(--muted);
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+  font-family: var(--font-geist-mono);
+  font-size: 0.85em;
+}
+
+.tiptap pre {
+  background: var(--muted);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.4rem 0;
+  overflow-x: auto;
+}
+.tiptap pre code {
+  background: none;
+  padding: 0;
+}
+
+.tiptap blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+  color: var(--muted-foreground);
+  margin: 0.4rem 0;
+}
+
+.mention {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-radius: 4px;
+  padding: 0.05rem 0.25rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
