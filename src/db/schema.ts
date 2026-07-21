@@ -134,6 +134,20 @@ export const workspaceInvites = pgTable(
   (t) => [uniqueIndex("workspace_invites_ws_email").on(t.workspaceId, t.email)]
 );
 
+// Snapshot of a deleted issue (issue + comments + labels + git links) so it can
+// be restored. Keeps hard deletes everywhere else — no deleted_at filtering.
+export const deletedIssues = pgTable("deleted_issues", {
+  id: text("id").primaryKey(), // original issue id
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  number: integer("number").notNull(),
+  payload: jsonb("payload").notNull(),
+  deletedById: text("deleted_by_id").references(() => users.id, { onDelete: "set null" }),
+  deletedAt: timestamp("deleted_at").notNull().defaultNow(),
+});
+
 export const projects = pgTable(
   "projects",
   {

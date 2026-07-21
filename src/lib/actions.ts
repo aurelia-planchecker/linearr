@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -8,7 +8,10 @@ import {
   activities,
   comments,
   cycles,
+  deletedIssues,
+  issueGitLinks,
   issueLabels,
+  labels,
   issues,
   memberships,
   notifications,
@@ -140,6 +143,23 @@ export async function deleteIssue(issueId: string) {
   const ws = await db.query.workspaces.findFirst({
     where: eq(workspaces.id, issue.project.workspaceId),
   });
+
+  // snapshot everything that cascades, so the issue can be restored from trash
+  const [cmts, labelRows, links] = await Promise.all([
+    db.query.comments.findMany({ where: eq(comments.issueId, issueId) }),
+    db.query.issueLabels.findMany({ where: eq(issueLabels.issueId, issueId) }),
+    db.query.issueGitLinks.findMany({ where: eq(issueGitLinks.issueId, issueId) }),
+  ]);
+  const { project: _project, ...issueRow } = issue;
+  await db.insert(deletedIssues).values({
+    id: issue.id,
+    projectId: issue.projectId,
+    title: issue.title,
+    number: issue.number,
+    payload: { issue: issueRow, comments: cmts, labels: labelRows, gitLinks: links },
+    deletedById: user.id,
+  });
+
   // parentId has no FK — detach children so they don't point at a dead issue
   await db.update(issues).set({ parentId: null }).where(eq(issues.parentId, issueId));
   await db.delete(issues).where(eq(issues.id, issueId));
@@ -147,6 +167,83 @@ export async function deleteIssue(issueId: string) {
     revalidateWorkspace(ws.slug);
     redirect(`/${ws.slug}/${issue.project.key}`);
   }
+}
+
+export async function restoreIssue(deletedId: string) {
+  const user = await requireUser();
+  const snap = await db.query.deletedIssues.findFirst({ where: eq(deletedIssues.id, deletedId) });
+  if (!snap) throw new Error("Nothing to restore");
+  const project = await db.query.projects.findFirst({ where: eq(projects.id, snap.projectId) });
+  if (!project) throw new Error("Project gone");
+  await assertMember(user.id, project.workspaceId);
+
+  const p = snap.payload as {
+    issue: Record<string, unknown>;
+    comments: Record<string, unknown>[];
+    labels: { issueId: string; labelId: string }[];
+  };
+  const src = p.issue;
+
+  // original number may have been reused since; take a fresh one if so
+  const numberTaken = await db.query.issues.findFirst({
+    where: and(eq(issues.projectId, snap.projectId), eq(issues.number, snap.number)),
+  });
+  const [{ max }] = numberTaken
+    ? await db
+        .select({ max: sql<number>`coalesce(max(${issues.number}), 0)` })
+        .from(issues)
+        .where(eq(issues.projectId, snap.projectId))
+    : [{ max: 0 }];
+
+  // referenced rows may be gone by now — drop what no longer resolves
+  const cycleOk =
+    src.cycleId && (await db.query.cycles.findFirst({ where: eq(cycles.id, String(src.cycleId)) }));
+  const assigneeOk =
+    src.assigneeId &&
+    (await db.query.users.findFirst({ where: eq(users.id, String(src.assigneeId)) }));
+
+  await db.insert(issues).values({
+    id: snap.id,
+    projectId: snap.projectId,
+    number: numberTaken ? max + 1 : snap.number,
+    type: src.type as "issue" | "epic",
+    parentId: null,
+    title: snap.title,
+    description: src.description ?? null,
+    status: src.status as IssueStatus,
+    priority: src.priority as IssuePriority,
+    assigneeId: assigneeOk ? String(src.assigneeId) : null,
+    creatorId: String(src.creatorId),
+    cycleId: cycleOk ? String(src.cycleId) : null,
+    dueDate: (src.dueDate as string | null) ?? null,
+    estimate: (src.estimate as number | null) ?? null,
+    sortOrder: Number(src.sortOrder ?? 0),
+    createdAt: new Date(String(src.createdAt)),
+    updatedAt: new Date(),
+  });
+
+  if (p.comments.length) {
+    await db.insert(comments).values(
+      p.comments.map((c) => ({
+        ...(c as typeof comments.$inferInsert),
+        createdAt: new Date(String(c.createdAt)),
+        updatedAt: new Date(String(c.updatedAt)),
+      }))
+    );
+  }
+  if (p.labels.length) {
+    const alive = await db.query.labels.findMany({
+      where: inArray(labels.id, p.labels.map((l) => l.labelId)),
+    });
+    const aliveIds = new Set(alive.map((l) => l.id));
+    const keep = p.labels.filter((l) => aliveIds.has(l.labelId));
+    if (keep.length) await db.insert(issueLabels).values(keep).onConflictDoNothing();
+  }
+  // ponytail: git links not restored — they re-sync from GitHub webhook events
+
+  await db.delete(deletedIssues).where(eq(deletedIssues.id, deletedId));
+  const ws = await db.query.workspaces.findFirst({ where: eq(workspaces.id, project.workspaceId) });
+  if (ws) revalidateWorkspace(ws.slug);
 }
 
 export async function createProject(wsSlug: string, name: string, key: string) {
