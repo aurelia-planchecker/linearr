@@ -64,8 +64,25 @@ export async function createWorkspace(name: string) {
   redirect(`/${ws.slug}`);
 }
 
+/** Fire-and-forget invite email. Silent no-op unless RESEND_API_KEY is set. */
+async function sendInviteEmail(to: string, workspaceName: string, inviterName: string) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return;
+  const appUrl = process.env.AUTH_URL ?? "http://localhost:3000";
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? "Linearr <onboarding@resend.dev>",
+      to,
+      subject: `${inviterName} invited you to ${workspaceName} on Linearr`,
+      html: `<p>${inviterName} invited you to the <b>${workspaceName}</b> workspace on Linearr.</p><p><a href="${appUrl}/login">Sign in with GitHub</a> using this email address (${to}) and you'll join automatically.</p>`,
+    }),
+  }).catch((e) => console.error("invite email failed", e));
+}
+
 export async function inviteMember(wsSlug: string, email: string) {
-  const { workspace, role } = await requireWorkspace(wsSlug);
+  const { user, workspace, role } = await requireWorkspace(wsSlug);
   if (role !== "admin") throw new Error("Only admins can invite");
   const clean = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new Error("Invalid email");
@@ -81,6 +98,7 @@ export async function inviteMember(wsSlug: string, email: string) {
       .values({ workspaceId: workspace.id, email: clean })
       .onConflictDoNothing();
   }
+  await sendInviteEmail(clean, workspace.name, user.name ?? "A teammate");
   revalidateWorkspace(wsSlug);
 }
 
