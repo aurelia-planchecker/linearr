@@ -28,7 +28,9 @@ export function getGithubApp() {
 
 /** Find issues in a workspace matching keys like ENG-12 found in text. */
 export async function findIssuesByKeys(workspaceId: string, text: string) {
-  const keys = [...new Set([...text.matchAll(ISSUE_KEY_REGEX)].map((m) => `${m[1]}-${m[2]}`))];
+  const keys = [
+    ...new Set([...text.matchAll(ISSUE_KEY_REGEX)].map((m) => `${m[1].toUpperCase()}-${m[2]}`)),
+  ];
   if (!keys.length) return [];
   const wsProjects = await db.query.projects.findMany({
     where: eq(projects.workspaceId, workspaceId),

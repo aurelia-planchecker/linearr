@@ -28,7 +28,8 @@ export const PRIORITY_META: Record<IssuePriority, { label: string; color: string
   none: { label: "No priority", color: "#747c8c" },
 };
 
-export const ISSUE_KEY_REGEX = /\b([A-Z][A-Z0-9]{1,9})-(\d+)\b/g;
+// Case-insensitive so lowercase branch names like stack-12-fix-login link too.
+export const ISSUE_KEY_REGEX = /\b([A-Za-z][A-Za-z0-9]{1,9})-(\d+)\b/g;
 
 export function relativeTime(d: Date | string) {
   const t = typeof d === "string" ? new Date(d) : d;

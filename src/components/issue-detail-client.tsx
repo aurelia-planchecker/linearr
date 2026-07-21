@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { CalendarDays, Check, Copy, Plus } from "lucide-react";
+import { CalendarDays, Check, Copy, GitBranch, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,30 @@ export function CopyLinkButton({ text }: { text: string }) {
       aria-label="Copy link"
     >
       <Copy className="size-3.5" />
+    </Button>
+  );
+}
+
+export function CopyBranchButton({ issueKey, title }: { issueKey: string; title: string }) {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40)
+    .replace(/-$/, "");
+  const branch = `${issueKey.toLowerCase()}${slug ? `-${slug}` : ""}`;
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-6"
+      onClick={() => {
+        navigator.clipboard.writeText(branch);
+        toast.success(`Branch name copied: ${branch}`);
+      }}
+      aria-label="Copy branch name"
+    >
+      <GitBranch className="size-3.5" />
     </Button>
   );
 }

@@ -19,6 +19,7 @@ import { MemberAvatar, StatusIcon } from "@/components/issue-bits";
 import {
   AddSubIssue,
   CommentComposer,
+  CopyBranchButton,
   CopyLinkButton,
   DescriptionEditor,
   PropertySidebar,
@@ -119,6 +120,7 @@ export default async function IssuePage({
             )}
             <span className="font-mono text-xs">{issueKey}</span>
             <CopyLinkButton text={`${issueKey}: ${issue.title}`} />
+            <CopyBranchButton issueKey={issueKey} title={issue.title} />
             {issue.type === "epic" && (
               <Badge variant="outline" className="gap-1 text-primary">
                 <Layers className="size-3" /> Epic

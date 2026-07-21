@@ -114,7 +114,9 @@ export async function POST(req: Request) {
             metadata: { author: pr.user?.login, baseRef: pr.base?.ref },
           });
           if (body.action === "opened" || body.action === "ready_for_review") {
-            await automationMove(issue, key, "in_progress", `PR #${pr.number} opened`);
+            // draft PRs mean work in progress; real/ready PRs mean review
+            const target = pr.draft ? "in_progress" : "in_review";
+            await automationMove(issue, key, target, `PR #${pr.number} opened`);
           } else if (body.action === "closed" && pr.merged) {
             await automationMove(issue, key, "done", `PR #${pr.number} merged`);
           }
