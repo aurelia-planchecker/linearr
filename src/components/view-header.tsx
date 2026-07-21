@@ -20,8 +20,8 @@ export function ViewHeader({
   const pathname = usePathname();
   const base = `/${workspaceSlug}/${projectKey}`;
   const tabs = [
-    { href: base, label: "List", icon: List },
-    { href: `${base}/board`, label: "Board", icon: Kanban },
+    { href: base, label: "Board", icon: Kanban },
+    { href: `${base}/list`, label: "List", icon: List },
     { href: `${base}/cycles`, label: "Cycles", icon: RefreshCw },
   ];
   return (

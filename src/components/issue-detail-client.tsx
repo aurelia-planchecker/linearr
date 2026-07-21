@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { CalendarDays, Check, Copy, GitBranch, Plus } from "lucide-react";
+import { CalendarDays, Check, Copy, GitBranch, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ import {
   type Member,
 } from "@/components/issue-bits";
 import { Editor } from "@/components/editor";
-import { addComment, createIssue, updateIssue } from "@/lib/actions";
+import { addComment, createIssue, deleteIssue, updateIssue } from "@/lib/actions";
 import { PRIORITY_META, STATUS_META } from "@/lib/issue-meta";
 import type { IssuePriority, IssueStatus } from "@/db/schema";
 import { cn } from "@/lib/utils";
@@ -66,6 +66,24 @@ export function CopyBranchButton({ issueKey, title }: { issueKey: string; title:
       aria-label="Copy branch name"
     >
       <GitBranch className="size-3.5" />
+    </Button>
+  );
+}
+
+export function DeleteIssueButton({ issueId, issueKey }: { issueId: string; issueKey: string }) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-6 text-muted-foreground hover:text-red-400"
+      onClick={async () => {
+        if (!window.confirm(`Delete ${issueKey}? This also removes its comments and links.`))
+          return;
+        await deleteIssue(issueId);
+      }}
+      aria-label="Delete issue"
+    >
+      <Trash2 className="size-3.5" />
     </Button>
   );
 }

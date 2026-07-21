@@ -196,16 +196,16 @@ function ProjectNav({
               pathname === base && "bg-accent text-foreground"
             )}
           >
-            <List className="size-3.5" /> Issues
+            <Kanban className="size-3.5" /> Board
           </Link>
           <Link
-            href={`${base}/board`}
+            href={`${base}/list`}
             className={cn(
               "flex items-center gap-2 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground",
-              pathname === `${base}/board` && "bg-accent text-foreground"
+              pathname === `${base}/list` && "bg-accent text-foreground"
             )}
           >
-            <Kanban className="size-3.5" /> Board
+            <List className="size-3.5" /> Issues
           </Link>
           <Link
             href={`${base}/cycles`}

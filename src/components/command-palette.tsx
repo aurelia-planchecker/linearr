@@ -89,8 +89,8 @@ export function CommandPalette({
   const nav = useMemo(
     () =>
       projects.flatMap((p) => [
-        { icon: List, label: `${p.name} · Issues`, path: `/${workspaceSlug}/${p.key}` },
-        { icon: Kanban, label: `${p.name} · Board`, path: `/${workspaceSlug}/${p.key}/board` },
+        { icon: Kanban, label: `${p.name} · Board`, path: `/${workspaceSlug}/${p.key}` },
+        { icon: List, label: `${p.name} · Issues`, path: `/${workspaceSlug}/${p.key}/list` },
         { icon: RefreshCw, label: `${p.name} · Cycles`, path: `/${workspaceSlug}/${p.key}/cycles` },
       ]),
     [projects, workspaceSlug]

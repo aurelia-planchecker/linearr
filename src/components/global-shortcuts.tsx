@@ -38,7 +38,7 @@ export function GlobalShortcuts({ workspaceSlug }: { workspaceSlug: string }) {
         const seg = pathname.split("/").filter(Boolean); // [ws, PROJ, ...]
         const projectKey = seg[1] && !["inbox", "settings", "issue"].includes(seg[1]) ? seg[1] : null;
         if (projectKey)
-          router.push(`/${workspaceSlug}/${projectKey}${e.key === "b" ? "/board" : ""}`);
+          router.push(`/${workspaceSlug}/${projectKey}${e.key === "b" ? "" : "/list"}`);
       }
     };
     window.addEventListener("keydown", onKey);

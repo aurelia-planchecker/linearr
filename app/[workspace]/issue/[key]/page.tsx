@@ -21,6 +21,7 @@ import {
   CommentComposer,
   CopyBranchButton,
   CopyLinkButton,
+  DeleteIssueButton,
   DescriptionEditor,
   PropertySidebar,
   TitleEditor,
@@ -121,6 +122,7 @@ export default async function IssuePage({
             <span className="font-mono text-xs">{issueKey}</span>
             <CopyLinkButton text={`${issueKey}: ${issue.title}`} />
             <CopyBranchButton issueKey={issueKey} title={issue.title} />
+            <DeleteIssueButton issueId={issue.id} issueKey={issueKey} />
             {issue.type === "epic" && (
               <Badge variant="outline" className="gap-1 text-primary">
                 <Layers className="size-3" /> Epic

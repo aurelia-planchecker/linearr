@@ -133,6 +133,22 @@ export async function claimInvites() {
   return slug;
 }
 
+export async function deleteIssue(issueId: string) {
+  const user = await requireUser();
+  const issue = await issueWithProject(issueId);
+  await assertMember(user.id, issue.project.workspaceId);
+  const ws = await db.query.workspaces.findFirst({
+    where: eq(workspaces.id, issue.project.workspaceId),
+  });
+  // parentId has no FK — detach children so they don't point at a dead issue
+  await db.update(issues).set({ parentId: null }).where(eq(issues.parentId, issueId));
+  await db.delete(issues).where(eq(issues.id, issueId));
+  if (ws) {
+    revalidateWorkspace(ws.slug);
+    redirect(`/${ws.slug}/${issue.project.key}`);
+  }
+}
+
 export async function createProject(wsSlug: string, name: string, key: string) {
   const { workspace } = await requireWorkspace(wsSlug);
   const cleanKey = key.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
@@ -298,15 +314,6 @@ export async function updateIssue(issueId: string, patch: IssuePatch) {
     await notifyMentions(parseDoc(patch.description), user.id, issueId, key, null, issue.description);
   }
 
-  const ws = await db.query.workspaces.findFirst({ where: eq(workspaces.id, issue.project.workspaceId) });
-  if (ws) revalidateWorkspace(ws.slug);
-}
-
-export async function deleteIssue(issueId: string) {
-  const user = await requireUser();
-  const issue = await issueWithProject(issueId);
-  await assertMember(user.id, issue.project.workspaceId);
-  await db.delete(issues).where(or(eq(issues.id, issueId), eq(issues.parentId, issueId)));
   const ws = await db.query.workspaces.findFirst({ where: eq(workspaces.id, issue.project.workspaceId) });
   if (ws) revalidateWorkspace(ws.slug);
 }
