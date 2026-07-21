@@ -54,7 +54,9 @@ export default async function LoginPage({
         {(!process.env.AUTH_GITHUB_ID || !process.env.AUTH_GITHUB_SECRET) && (
           <p className="text-center text-xs text-muted-foreground">
             Set AUTH_GITHUB_ID / AUTH_GITHUB_SECRET in .env. OAuth callback must be{" "}
-            <code className="text-[10px]">http://localhost:3000/api/auth/callback/github</code>
+            <code className="text-[10px]">
+              {process.env.AUTH_URL ?? "http://localhost:3000"}/api/auth/callback/github
+            </code>
           </p>
         )}
 
