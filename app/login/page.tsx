@@ -3,9 +3,14 @@ import { auth, signIn } from "@/auth";
 import { db } from "@/db";
 import { Button } from "@/components/ui/button";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; code?: string }>;
+}) {
   const session = await auth();
   if (session?.user) redirect("/");
+  const { error, code } = await searchParams;
 
   const demoUsers =
     process.env.NODE_ENV !== "production"
@@ -25,19 +30,31 @@ export default async function LoginPage() {
           </p>
         </div>
 
+        {error && (
+          <p className="rounded-md border border-red-900 bg-red-950 p-2 text-center text-xs text-red-400">
+            Sign-in failed: {error}
+            {code ? ` (${code})` : ""}
+          </p>
+        )}
+
         <form
           action={async () => {
             "use server";
             await signIn("github", { redirectTo: "/" });
           }}
         >
-          <Button type="submit" className="w-full" disabled={!process.env.AUTH_GITHUB_ID}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!process.env.AUTH_GITHUB_ID || !process.env.AUTH_GITHUB_SECRET}
+          >
             Continue with GitHub
           </Button>
         </form>
-        {!process.env.AUTH_GITHUB_ID && (
+        {(!process.env.AUTH_GITHUB_ID || !process.env.AUTH_GITHUB_SECRET) && (
           <p className="text-center text-xs text-muted-foreground">
-            Set AUTH_GITHUB_ID / AUTH_GITHUB_SECRET in .env to enable GitHub login.
+            Set AUTH_GITHUB_ID / AUTH_GITHUB_SECRET in .env. OAuth callback must be{" "}
+            <code className="text-[10px]">http://localhost:3000/api/auth/callback/github</code>
           </p>
         )}
 
