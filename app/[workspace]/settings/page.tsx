@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { githubInstallations, memberships } from "@/db/schema";
+import { githubInstallations, memberships, workspaceInvites } from "@/db/schema";
+import { inviteMember, revokeInvite } from "@/lib/actions";
 import { requireWorkspace } from "@/lib/guards";
+import { Input } from "@/components/ui/input";
 import { githubConfigured } from "@/lib/github";
 import { relativeTime } from "@/lib/issue-meta";
 import { MemberAvatar } from "@/components/issue-bits";
@@ -25,7 +27,7 @@ export default async function SettingsPage({
   const { workspace: slug } = await params;
   const { workspace, role } = await requireWorkspace(slug);
 
-  const [members, installations] = await Promise.all([
+  const [members, installations, invites] = await Promise.all([
     db.query.memberships.findMany({
       where: eq(memberships.workspaceId, workspace.id),
       with: { user: true },
@@ -33,6 +35,9 @@ export default async function SettingsPage({
     db.query.githubInstallations.findMany({
       where: eq(githubInstallations.workspaceId, workspace.id),
       with: { repos: true },
+    }),
+    db.query.workspaceInvites.findMany({
+      where: eq(workspaceInvites.workspaceId, workspace.id),
     }),
   ]);
 
@@ -84,7 +89,53 @@ export default async function SettingsPage({
                   </Badge>
                 </div>
               ))}
+              {invites.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground"
+                >
+                  <div className="flex size-[26px] items-center justify-center rounded-full border border-dashed border-border text-[10px]">
+                    ?
+                  </div>
+                  <p>{inv.email}</p>
+                  <Badge variant="outline" className="ml-auto">
+                    invited
+                  </Badge>
+                  {role === "admin" && (
+                    <form
+                      action={async () => {
+                        "use server";
+                        await revokeInvite(slug, inv.id);
+                      }}
+                    >
+                      <Button type="submit" variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                        Revoke
+                      </Button>
+                    </form>
+                  )}
+                </div>
+              ))}
             </div>
+            {role === "admin" && (
+              <form
+                className="mt-2 flex gap-2"
+                action={async (fd: FormData) => {
+                  "use server";
+                  await inviteMember(slug, String(fd.get("email")));
+                }}
+              >
+                <Input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="teammate@example.com"
+                  className="h-8 text-sm"
+                />
+                <Button type="submit" size="sm" variant="outline" className="h-8">
+                  Invite
+                </Button>
+              </form>
+            )}
           </section>
 
           <section>

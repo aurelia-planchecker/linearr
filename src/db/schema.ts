@@ -118,6 +118,22 @@ export const memberships = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.workspaceId] })]
 );
 
+export const workspaceInvites = pgTable(
+  "workspace_invites",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: memberRole("role").notNull().default("member"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("workspace_invites_ws_email").on(t.workspaceId, t.email)]
+);
+
 export const projects = pgTable(
   "projects",
   {

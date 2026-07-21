@@ -14,6 +14,7 @@ import {
   notifications,
   projects,
   users,
+  workspaceInvites,
   workspaces,
   type IssuePriority,
   type IssueStatus,
@@ -61,6 +62,57 @@ export async function createWorkspace(name: string) {
   const [ws] = await db.insert(workspaces).values({ name, slug }).returning();
   await db.insert(memberships).values({ userId: user.id, workspaceId: ws.id, role: "admin" });
   redirect(`/${ws.slug}`);
+}
+
+export async function inviteMember(wsSlug: string, email: string) {
+  const { workspace, role } = await requireWorkspace(wsSlug);
+  if (role !== "admin") throw new Error("Only admins can invite");
+  const clean = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) throw new Error("Invalid email");
+  const existing = await db.query.users.findFirst({ where: eq(users.email, clean) });
+  if (existing) {
+    await db
+      .insert(memberships)
+      .values({ userId: existing.id, workspaceId: workspace.id })
+      .onConflictDoNothing();
+  } else {
+    await db
+      .insert(workspaceInvites)
+      .values({ workspaceId: workspace.id, email: clean })
+      .onConflictDoNothing();
+  }
+  revalidateWorkspace(wsSlug);
+}
+
+export async function revokeInvite(wsSlug: string, inviteId: string) {
+  const { workspace, role } = await requireWorkspace(wsSlug);
+  if (role !== "admin") throw new Error("Only admins can revoke invites");
+  await db
+    .delete(workspaceInvites)
+    .where(and(eq(workspaceInvites.id, inviteId), eq(workspaceInvites.workspaceId, workspace.id)));
+  revalidateWorkspace(wsSlug);
+}
+
+/** Claim pending invites for the signed-in user's email; returns a workspace slug to land on, if claimed. */
+export async function claimInvites() {
+  const user = await requireUser();
+  const email = user.email;
+  const userId = user.id;
+  if (!email) return null;
+  const invites = await db.query.workspaceInvites.findMany({
+    where: eq(workspaceInvites.email, email.toLowerCase()),
+  });
+  let slug: string | null = null;
+  for (const inv of invites) {
+    await db
+      .insert(memberships)
+      .values({ userId, workspaceId: inv.workspaceId, role: inv.role })
+      .onConflictDoNothing();
+    await db.delete(workspaceInvites).where(eq(workspaceInvites.id, inv.id));
+    const ws = await db.query.workspaces.findFirst({ where: eq(workspaces.id, inv.workspaceId) });
+    if (ws) slug = ws.slug;
+  }
+  return slug;
 }
 
 export async function createProject(wsSlug: string, name: string, key: string) {
