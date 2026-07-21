@@ -56,7 +56,9 @@ export async function automationMove(
   to: IssueStatus,
   reason: string
 ) {
-  if (issue.status === to || issue.status === "canceled") return;
+  // done/canceled are terminal for automation — a late review request must not
+  // pull a shipped issue back to In Review (a human can still move it manually)
+  if (issue.status === to || issue.status === "canceled" || issue.status === "done") return;
   await db
     .update(issues)
     .set({ status: to, updatedAt: new Date() })

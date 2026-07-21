@@ -121,7 +121,12 @@ export default async function IssuePage({
             )}
             <span className="font-mono text-xs">{issueKey}</span>
             <CopyLinkButton text={`${issueKey}: ${issue.title}`} />
-            <CopyBranchButton issueKey={issueKey} title={issue.title} />
+            <CopyBranchButton
+              issueId={issue.id}
+              issueKey={issueKey}
+              title={issue.title}
+              status={issue.status}
+            />
             <DeleteIssueButton issueId={issue.id} issueKey={issueKey} />
             {issue.type === "epic" && (
               <Badge variant="outline" className="gap-1 text-primary">

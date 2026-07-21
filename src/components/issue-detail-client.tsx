@@ -46,7 +46,17 @@ export function CopyLinkButton({ text }: { text: string }) {
   );
 }
 
-export function CopyBranchButton({ issueKey, title }: { issueKey: string; title: string }) {
+export function CopyBranchButton({
+  issueId,
+  issueKey,
+  title,
+  status,
+}: {
+  issueId: string;
+  issueKey: string;
+  title: string;
+  status: IssueStatus;
+}) {
   const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -59,9 +69,15 @@ export function CopyBranchButton({ issueKey, title }: { issueKey: string; title:
       variant="ghost"
       size="icon"
       className="size-6"
-      onClick={() => {
+      onClick={async () => {
         navigator.clipboard.writeText(branch);
-        toast.success(`Branch name copied: ${branch}`);
+        // Linear behavior: copying the branch name marks the issue as started
+        if (status === "backlog" || status === "todo") {
+          await updateIssue(issueId, { status: "in_progress" });
+          toast.success(`Branch name copied: ${branch} — moved to In Progress`);
+        } else {
+          toast.success(`Branch name copied: ${branch}`);
+        }
       }}
       aria-label="Copy branch name"
     >

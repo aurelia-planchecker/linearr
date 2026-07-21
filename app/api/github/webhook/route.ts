@@ -114,9 +114,14 @@ export async function POST(req: Request) {
             metadata: { author: pr.user?.login, baseRef: pr.base?.ref },
           });
           if (body.action === "opened" || body.action === "ready_for_review") {
-            // draft PRs mean work in progress; real/ready PRs mean review
-            const target = pr.draft ? "in_progress" : "in_review";
+            // like Linear: drafts and PRs without a requested reviewer stay
+            // In Progress; review only starts when someone is asked for it
+            const reviewRequested =
+              (pr.requested_reviewers?.length ?? 0) + (pr.requested_teams?.length ?? 0) > 0;
+            const target = !pr.draft && reviewRequested ? "in_review" : "in_progress";
             await automationMove(issue, key, target, `PR #${pr.number} opened`);
+          } else if (body.action === "review_requested") {
+            await automationMove(issue, key, "in_review", `Review requested on PR #${pr.number}`);
           } else if (body.action === "closed" && pr.merged) {
             await automationMove(issue, key, "done", `PR #${pr.number} merged`);
           }
